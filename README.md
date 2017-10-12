@@ -1,6 +1,6 @@
-# Where's my Food? - Heroku Repo
+# Where's My Food?
 
-CZ1003 - NTU Programming Assignment Project
+CZ1003 - NTU Telegram Bot Project
 
 ## Running on Local Machines
 
