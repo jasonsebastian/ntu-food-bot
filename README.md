@@ -70,14 +70,14 @@ where $t$ represents the total number of vote and $r$ as the current rating. To 
 It is probably best if we explain about the concept of flavors.
 
 Regardless of the type of objects received, `telepot` generically calls everything the user sends as “message” (with a lowercase “m”). A message’s flavor depends on the underlying object:
- - a Message object gives the flavor `chat`
- - a CallbackQuery object gives the flavor `callback_query`
+ - a `Message` object gives the flavor **chat**
+ - a `CallbackQuery` object gives the flavor **callback_query**
 
 And now, we get to the main theme.
 
 A `DelegatorBot` is able to spawn delegates. The code is spawning `FoodStarter` and `Fooder` per chat id. Then, the bot calls `MessageLoop` which makes the bot to run forever.
 
-There are only two functions inside `FoodStarter`, `on_chat_message` and `on_close`.
+There are only two methods inside `FoodStarter`, `on_chat_message` and `on_close`.
 
 `on_chat_message` handles all messages with `chat` flavor, and `on_close` is called when the object is closed.
 
@@ -88,7 +88,7 @@ if content_type != 'text':
     return
 ```
 
-This code block checks whether the user sent a text-type message. If not, the code will escape the `on_chat_message` function. 
+This code block checks whether the user sent a text-type message. If not, the code will escape the `on_chat_message` method. 
 
 ```python
 self.sender.sendMessage(
@@ -104,18 +104,19 @@ self.sender.sendMessage(
 
 This code block sends *Press START to order some food...* to the user with an inline keyboard, containing a button labeled *START*. Throughout the code, messages along with their respective keyboards will be sent by replacing this first message, which means that there will only be at most one message and one inline keyboard.
 
-Inside `Fooder`, the functions can be categorized into two types: user-defined functions and built-in functions. The latter will be discussed first.
+Inside `Fooder`, the methods can be categorized into two types: user-defined methods and built-in methods. The latter will be discussed first.
 
-There are 3 built-in functions; `on_callback_query`, `on__idle` and `on_close`.
-`on_callback_query`'s task is to handle all messages with `callback_query` flavor, `on__idle` is called when the user is idle for the duration specified in the timeout parameter (line 266), and `on_close`'s function is previously explained.
+There are 3 built-in methods; `on_callback_query`, `on__idle` and `on_close`.
 
+`on_callback_query`'s task is to handle all messages with `callback_query` flavor, `on__idle` is called when the user is idle for the duration specified in the timeout parameter (line 266), and `on_close`'s method is previously explained.
 
-There are two variables initialized here, `_user_choice` and `_stage_count`.
-`_user_choice` is a list where all of the user's choices will be stored. `_stage_count` is an integer variable and it indicates the *stage* the user is currently on. *Stage* is different for each different question asked to the user.
+There are two attributes initialized here, `_user_choice` and `_stage_count`.
 
-In `on_callback_query` function, the code checks if the user has already pressed the *START* button. If so, then `_halal` is called. If the user presses the keyboard from `_halal`, `_stage_count` will increment and the `query_data` will be appended to a list called `_user_choice`. `_stage_count` will continue to increment as the program progresses.
+`_user_choice` is a list where all of the user's choices will be stored. `_stage_count` is an integer attribute and it indicates the *stage* the user is currently on. *Stage* is different for each different question asked to the user.
 
-Two exceptions are handled in this function.
+In `on_callback_query` method, the code checks if the user has already pressed the *START* button. If so, then `_halal` is called. If the user presses the keyboard from `_halal`, `_stage_count` will increment and the `query_data` will be appended to a list called `_user_choice`. `_stage_count` will continue to increment as the program progresses.
+
+Two exceptions are handled in this method.
 
 ```python
 if query_data == 'back' and self._user_choice:
@@ -147,12 +148,92 @@ Each of the user-defined functions corresponds to one stage, and as previously m
         self._thank_you()
 ```
 
-Also, on every stage, whenever the message needs concatenation operations, the variable `_msg_sent` is used.
+Also, on every stage, whenever the message needs concatenation operations, the attribute `_msg_sent` is used.
 
-In `_halal`, a keyboard containing *Halal food* and *Everything I eat* is set up. `editor.editMessageText` edits the previous message and keyboard if present.
+In `_halal`, a keyboard containing *Halal food* and *Everything I eat* is set up. `editor.editMessageText` edits the previous message and keyboard if present. Each of the user-defined method will have this `editor.editMessageText` method, which as previously mentioned, will replace the previous message and send a new one.
+
+Another thing to notice is that the `editor.editMessageText` is always paired with `time.sleep(1)`. An example code would be from line 119-120.
+
+```python
+time.sleep(1)
+self.editor.editMessageText(self._msg_sent, reply_markup=markup)
+```
+
+In `_place`, the code first retrieves keyboard according to the user’s halal preference. This choice is retrieved using the list `_user_choice`.
+
+```python
+# Set keyboard according to preference.
+if self._user_choice[0] == 'no-pref':
+    keyboard = food.no_pref_canteens_kbd()
+else:
+    keyboard = food.halal_canteens_kbd()
+```
+
+In `_stalls`, first the stalls are retrieved from a function which is defined in `food.py`, called `get_stalls`. Then, the code constructs a string on `_msg_sent` where a numbered list of canteens will show up.
+
+```python
+for i in range(num_of_stalls):
+    rating = ratings.get_rating(canteen, stalls[i])
+    stalls_msg += (str(i + 1) + '. ' + stalls[i] + ' ' +
+                            (int(rating) * star) + '\n')
+```
+
+Ratings are also retrieved from the function `get_ratings` of `food.py`.
+
+In the code, we use emoji to be displayed to the user. The method `emojize` returns an object which contains the emoji specified in its parameter.
+
+```python
+star = emojize(':star:', use_aliases=True)
+```
+
+An edge case to be taken care of is when there is only one stall that matches the user preferences.
+
+```python
+if num_of_stalls != 1:
+    keyboard = food.build_kbd(stalls)
+    self._msg_sent += 'So which stall looks appetizing?'
+else:
+    keyboard = [
+        [InlineKeyboardButton(text='Yes',
+                                            callback_data=stalls[0])],
+        [InlineKeyboardButton(text='No',
+                                            callback_data='back')]
+    ]
+    self._msg_sent += 'So do you want to eat at this stall?'
+```
+
+So, if indeed the displayed stall is only one, `_msg_sent` becomes *So do you want to et at this stall?*, instead of *So which stall looks appetizing?*.
+ 
+In `_rate_taste`, first it retrieves the canteen and stall chosen from the attribute `_user_choice`.
+
+```python
+self._msg_sent = 'Here\'s the location of the canteen you chose.\n\n'
+self._msg_sent += food.get_url(canteen) + '\n\n'
+self._msg_sent += 'Thank you for choosing!\n\n'
+```
+
+Here it creates the message that contains the location of the canteen by seeking help from the function `get_url` from `food.py`. Then, question about how the the food taste is appended.
+
+```python
+keyboard = [
+    [InlineKeyboardButton(text='Yummy :D',
+                                        callback_data=4)],
+    [InlineKeyboardButton(text='Okay lah',
+                                        callback_data=3)],
+    [InlineKeyboardButton(text='Not so good',
+                                        callback_data=2)]
+]
+```
+
+The code shown above is how the in-line keyboard button to asks the food taste. The score ranges from 2 - 4. Actually, the scoring system is 1 - 5. The steps from 2 - 4 to 1 - 5 will be explained later.
+
+Then, as the previous methods done, it does `time.sleep(1)` then sends everything.
+
+`_rate_price` is very similar to `_rate_taste`, but the message is simply 'How about the price?' a
+
 
 #### How to run it locally
-To run it on local machines, first you have to create a new bot from BotFather in Telegram and get the token. Download all the file in the `bot` directory, then paste the token you have to `TOKEN` in line 262 of `index.py`. You would not be able to run without changing the token as it will results in webhook error.
+To run it on local machines, first you have to create a new bot from BotFather in Telegram and get the token. Download all the file in the `bot` directory, then paste the token you have to `TOKEN` in line 259 of `index.py`. You would not be able to run without changing the token as it will results in webhook error.
 
 The next step is you should install the modules requirements by running
 
