@@ -11,7 +11,6 @@ Where's My Food?
  6. Future Development
  7. Conclusion
 
-
 ## Introduction
 ### Background
 Having a good meal during lunchtime and enjoying the short breaks in the middle of a hectic schedule is a pleasure for everyone, especially NTU students who are asserted to use said time as wise as possible to keep up with the pace of this fast-changing world.
@@ -22,7 +21,6 @@ With the high amount of tasks and assignments, sometimes going to a canteen to h
 > #### Why do we care? 
 > When every individual can decide quickly which stall they want to buy their food from, the assumption that the time needed to finish their food is the same, the crowd level in the canteen should decrease. Consequently, this will ease the mobility and more seats in the canteen will be available, making others’ movements also faster.
 
-
 ## Solution
 ### Description
 As we can see, the majority of people like to eat the stall's or type of food they are familiar with. In general cases, those who want to try new food is only because they received suggestion from others.
@@ -32,7 +30,6 @@ We created a bot named "Where's My Food?", a chat bot in Telegram whose id is '@
 To use this bot, the user needs to download the Telegram app from Play Store or App Store if it has not been installed yet. Then, the user can search for ‘ntu_food_bot’ in Telegram. The bot will then give simple instructions to follow.
 
 The code for this bot is written in Python. The bot will first ask the user whether they want to browse for halal food or non-halal food, then ask which canteen they would prefer to eat at. In return, the bot sends back a list of the food stalls, matching the user’s preferences. Afterwards, the user is prompted to choose which stall to eat at. In return, the bot gives the url that directs the user to the Google Maps Application or Google Maps website with the location of said canteen. The user is asked to rate the stall after eating the meal. The rating provided goes into a database, and it is used to generate the ratings for the next user.
-
 
 ### Source Code
 #### Overview
@@ -45,24 +42,26 @@ The program is broken down into 1 `python` file, 2 `python` modules and 1 `json`
 #### food.py
 `food.py` helps `index.py` in building the in-line keyboard buttons, retrieving the list of stalls for each canteen and then gives the Google Maps URL search query for locating said canteen.
 
-The first function defined is `no_pref_canteens_kbd()`. It takes no parameters and returns the in line keyboard button for all the canteens.
+The first function defined is `no_pref_canteens_kbd`. It takes no parameters and returns the in line keyboard button for all the canteens.
 
-The second function is `halal_canteens_kbd()` whose function is similar to `no_pref_canteens_kbd()`, but it returns the in-line keyboard button for only the canteens that have at least one halal food stall.
+The second function is `halal_canteens_kbd`, which is similar to `no_pref_canteens_kbd`, but it returns the inline keyboard button for only the canteens that have at least one halal food stall.
 
-Next, `get_stalls()` takes the user’s halal preference and the name of the canteen that was chosen as parameters then returns the list of stalls that matches the user’s preference. If the user prefers halal food, then it simply checks the canteen’s name using an if - elif chain and returns the stall names as a list. If the user does not have any preferences, it opens `data.json`, then stores the names of the stalls with the keyword `canteen` into the list `stalls`, then returns it.
+Next, `get_stalls` takes the user’s halal preference and the name of the canteen that was chosen as parameters then returns the list of stalls that matches the user’s preference. If the user prefers halal food, then it simply checks the canteen’s name using an if - elif chain and returns the stall names as a list. If the user does not have any preferences, it opens `data.json`, then stores the names of the stalls with the keyword `canteen` into the list `stalls`, then returns it.
 
-`build_kbd(stalls)` helps build the inline keyboard button alignment into an appropriate number of rows and columns. 
+`build_kbd` helps build the inline keyboard button alignment into an appropriate number of rows and columns. 
 
-Finally, the last function is `get_url(canteen)` that returns the URL string of the Google Maps URL search query for each canteen.
+Finally, the last function is `get_url`, which returns the URL string of the Google Maps URL search query for each canteen.
 
 #### ratings.py
 `ratings.py` helps access and write to `data.json`. The first function is called `get_rating(canteen, stall)`.
+
 ```python
 def get_rating(canteen, stall):
     with open('/app/bot/data.json', 'r') as file:
         data = json.load(file)
     return data[canteen][stall][0]
 ```
+
 Then there is also a function called `store_rating(canteen, stall, rating)`. `data.json` only stores the total rating voted and current rating. The number of people is not stored explicitly, but is calculated by the equation
 $$ p = \frac{t}{r} $$
 where $t$ represents the total number of vote and $r$ as the current rating. To avoid division by 0 error, if $r = 0$, p is simply $0$. Then it writes it into the `json` file.
@@ -83,11 +82,14 @@ There are only two functions inside `FoodStarter`, `on_chat_message` and `on_clo
 `on_chat_message` handles all messages with `chat` flavor, and `on_close` is called when the object is closed.
 
 There are two code blocks worth paying attention to.
+
 ```python
 if content_type != 'text':
     return
 ```
+
 This code block checks whether the user sent a text-type message. If not, the code will escape the `on_chat_message` function. 
+
 ```python
 self.sender.sendMessage(
     'Press START to order some food ...',
@@ -99,14 +101,58 @@ self.sender.sendMessage(
             )
         )
 ```
-This code block sends ‘Press START to order some food...” to the user with an inline keyboard, containing a button labeled ‘START’. Throughout the code, messages along with their respective keyboards will be sent by replacing this first message, which means that there will only be at most one message and one inline keyboard.
+
+This code block sends *Press START to order some food...* to the user with an inline keyboard, containing a button labeled *START*. Throughout the code, messages along with their respective keyboards will be sent by replacing this first message, which means that there will only be at most one message and one inline keyboard.
 
 Inside `Fooder`, the functions can be categorized into two types: user-defined functions and built-in functions. The latter will be discussed first.
 
-There are 3 built-in functions; `on_callback_query`, `on__idle` and `on_close`. `on_callback_query`'s task is to handle all messages with `callback_query` flavor.
+There are 3 built-in functions; `on_callback_query`, `on__idle` and `on_close`.
+`on_callback_query`'s task is to handle all messages with `callback_query` flavor, `on__idle` is called when the user is idle for the duration specified in the timeout parameter (line 266), and `on_close`'s function is previously explained.
+
+
+There are two variables initialized here, `_user_choice` and `_stage_count`.
+`_user_choice` is a list where all of the user's choices will be stored. `_stage_count` is an integer variable and it indicates the *stage* the user is currently on. *Stage* is different for each different question asked to the user.
+
+In `on_callback_query` function, the code checks if the user has already pressed the *START* button. If so, then `_halal` is called. If the user presses the keyboard from `_halal`, `_stage_count` will increment and the `query_data` will be appended to a list called `_user_choice`. `_stage_count` will continue to increment as the program progresses.
+
+Two exceptions are handled in this function.
+
+```python
+if query_data == 'back' and self._user_choice:
+    # Make sure that empty list is not being popped.
+    self._user_choice.pop()
+
+    self._stage_count -= 1  # Go to the previous stage.
+```
+
+The first one is when the user presses the *BACK* button in each stage, as shown on the code above. `_user_choice` will pop its last element and `_stage_count` will decrement.
+
+The second is implicitly written on the code. If the user keeps sending random text messages and presses the *START* button, the keyboard from `_halal` will continue to pop up. In other words, in order to continue the user must press one of the button of the inline keyboard.
+
+Each of the user-defined functions corresponds to one stage, and as previously mentioned, the stages are accessed by evaluating the value of `_stage_count`. The order of the stages can be seen from the code below.
+
+```python
+# Go to function according to self._stage_count.
+    if self._stage_count == 0:
+        self._halal()
+    elif self._stage_count == 1:
+        self._place()
+    elif self._stage_count == 2:
+        self._stalls()
+    elif self._stage_count == 3:
+        self._rate_taste()
+    elif self._stage_count == 4:
+        self._rate_price()
+    elif self._stage_count == 5:
+        self._thank_you()
+```
+
+Also, on every stage, whenever the message needs concatenation operations, the variable `_msg_sent` is used.
+
+In `_halal`, a keyboard containing *Halal food* and *Everything I eat* is set up. `editor.editMessageText` edits the previous message and keyboard if present.
 
 #### How to run it locally
-To run it on local machines, first you have to create a new bot from BotFather in Telegram and get the token. Download all the file in the `bot` directory, then paste the token you have to `TOKEN` in line 271 of `index.py`. You would not be able to run without changing the token as it will results in webhook error.
+To run it on local machines, first you have to create a new bot from BotFather in Telegram and get the token. Download all the file in the `bot` directory, then paste the token you have to `TOKEN` in line 262 of `index.py`. You would not be able to run without changing the token as it will results in webhook error.
 
 The next step is you should install the modules requirements by running
 
@@ -119,17 +165,18 @@ in command prompt or terminal window.
 Then, you should replace all of the `'/app/bot/data.json'` with simply `'data.json'` in `food.py` and `ratings.py`
 Then run `index.py`, and try it from Telegram App. 
 
-
-
 ### Flowcharts
 ![Flowchart 1](https://lh3.googleusercontent.com/-6LCAV6EDwEA/Wd8PFSS7AZI/AAAAAAAAAdo/YI_wsNZl5_QsDqW4HHaocihdSZU-tRtjgCLcBGAs/s0/FLOWCHART+1+LG.jpg "Flowchart 1")
 
 ![enter image description here](https://lh3.googleusercontent.com/-CB2Unpslln0/Wd8PPN_DhbI/AAAAAAAAAdw/VlimIw-Vl0cLajSgP-OhbrGsHHXcojJbwCLcBGAs/s0/FLOWCHART+FINAL.jpg "Flowchart 2")
+
 ## Constraints and Limitations
 One of the biggest limitations found in this chat bot is that one can spam '/start' to the chat bot and it will let the program to create a great number of instances of the bot class. It may take the system down.
 
 The next limitation is that one can give fake ratings by using our bot repetitively to alter any stall's rate. This is a quite serious problem because if the information given is not reliable, then no one will use the bot.
+
 ## Future Development
 If we had more time, we would implement a strategy to tackle those constraints stated above. To solve the '/start' spamming problem, one possible way is to check whether this user have already got an instance of bot class or not by analyzing the chat id. Then to solve the fake ratings problem, it may be done by record users’ voting history, to let the user vote only after some period of time after the preceding vote.
+
 ## Conclusion
 Deciding what to eat may be annoying sometimes. Often we doubt stall's food. Moreover for our Muslim peers, they have to know which stall are halal. Therefore, 'Where's My Food?' chatbot helps to choose food based on your halal and canteen preferences, with live time ratings given by preceding users. It surely has some constraints and limitation, but with certain development it should be able to serve better.

@@ -56,8 +56,6 @@ class Fooder(telepot.helper.CallbackQueryOriginHandler):
 
         self._user_choice = []
         self._stage_count = 0
-        self._no_kbd = self._first_time = True
-        self._msg_sent = ''
 
     def on_callback_query(self, msg):
         query_id, from_id, query_data = telepot.glance(
@@ -251,7 +249,7 @@ class Fooder(telepot.helper.CallbackQueryOriginHandler):
         self.close()
 
     def on__idle(self, event):
-        '''Handles the bot when user is idle for 10 seconds.'''
+        '''Handles the bot when user is idle for 30 seconds.'''
         pass
 
     def on_close(self, ex):
