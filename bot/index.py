@@ -78,7 +78,7 @@ class Fooder(telepot.helper.CallbackQueryOriginHandler):
             print('callback_query [' + str(query_id) + ', ' +
                   str(from_id) + ', ' + query_data + ']')
 
-        # Go to function according to self._stage_count.
+        # Go to method according to self._stage_count.
         if self._stage_count == 0:
             self._halal()
         elif self._stage_count == 1:

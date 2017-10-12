@@ -34,13 +34,13 @@ The code for this bot is written in Python. The bot will first ask the user whet
 ### Source Code
 #### Overview
 
-The program is broken down into 1 `python` file, 2 `python` modules and 1 `json` file. The 3 modules are `index.py`, `food.py`, and `ratings.py`. An additional python module `index.py` works as the main program to run the bot. `food.py` consists of some function about in-line keyboard building and processing data. `ratings.py` helps the main program to get data and write data into database. The `json` file mentioned earlier named `data.json` acts as the database. 
+The program is broken down into 1 `python` file, 2 `python` modules and 1 `json` file. The 2 modules are `food.py` and `ratings.py`. The python file `index.py` works as the main program to run the bot. `food.py` consists of some function about inline keyboard building and processing data. `ratings.py` helps the main program to get data and write data into database. The `json` file mentioned earlier named `data.json` acts as the database. 
 
 #### index.py
 `index.py` is the main file which needs to be executed for the bot to run. In the code, the bot is instantiated using 2 classes, `FoodStarter` and `Fooder`. `FoodStarter` is instantiated every time a unique user sends a message to the bot. The instance of `FoodStarter`’s task is to prompt the user to start. Once the user chooses to start, the instance of `FoodStarter` is closed, and the instance of `Fooder` comes into place. The instance of `Fooder` only handles messages sent when the inline keyboard is pressed.
 
 #### food.py
-`food.py` helps `index.py` in building the in-line keyboard buttons, retrieving the list of stalls for each canteen and then gives the Google Maps URL search query for locating said canteen.
+`food.py` helps `index.py` in building the inline keyboard buttons, retrieving the list of stalls for each canteen and then gives the Google Maps URL search query for locating said canteen.
 
 The first function defined is `no_pref_canteens_kbd`. It takes no parameters and returns the in line keyboard button for all the canteens.
 
@@ -75,7 +75,7 @@ Regardless of the type of objects received, `telepot` generically calls everythi
 
 And now, we get to the main theme.
 
-A `DelegatorBot` is able to spawn delegates. The code is spawning `FoodStarter` and `Fooder` per chat id. Then, the bot calls `MessageLoop` which makes the bot to run forever.
+A `DelegatorBot` is able to spawn **delegates**. The code is spawning `FoodStarter` and `Fooder` **per chat id**. Then, the bot calls `MessageLoop` which makes the bot to run forever.
 
 There are only two methods inside `FoodStarter`, `on_chat_message` and `on_close`.
 
@@ -102,7 +102,7 @@ self.sender.sendMessage(
         )
 ```
 
-This code block sends *Press START to order some food...* to the user with an inline keyboard, containing a button labeled *START*. Throughout the code, messages along with their respective keyboards will be sent by replacing this first message, which means that there will only be at most one message and one inline keyboard.
+This code block sends *Press START to order some food...* to the user with an inline keyboard, containing a button labeled *START*. Throughout the code, messages along with their respective keyboards will be sent by **replacing** this first message, which means that there will only be at most one message and one inline keyboard.
 
 Inside `Fooder`, the methods can be categorized into two types: user-defined methods and built-in methods. The latter will be discussed first.
 
@@ -130,10 +130,10 @@ The first one is when the user presses the *BACK* button in each stage, as shown
 
 The second is implicitly written on the code. If the user keeps sending random text messages and presses the *START* button, the keyboard from `_halal` will continue to pop up. In other words, in order to continue the user must press one of the button of the inline keyboard.
 
-Each of the user-defined functions corresponds to one stage, and as previously mentioned, the stages are accessed by evaluating the value of `_stage_count`. The order of the stages can be seen from the code below.
+Each of the user-defined methods corresponds to one stage, and as previously mentioned, the stages are accessed by evaluating the value of `_stage_count`. The order of the stages can be seen from the code below.
 
 ```python
-# Go to function according to self._stage_count.
+# Go to method according to self._stage_count.
     if self._stage_count == 0:
         self._halal()
     elif self._stage_count == 1:
@@ -175,7 +175,7 @@ In `_stalls`, first the stalls are retrieved from a function which is defined in
 for i in range(num_of_stalls):
     rating = ratings.get_rating(canteen, stalls[i])
     stalls_msg += (str(i + 1) + '. ' + stalls[i] + ' ' +
-                            (int(rating) * star) + '\n')
+                   (int(rating) * star) + '\n')
 ```
 
 Ratings are also retrieved from the function `get_ratings` of `food.py`.
@@ -195,14 +195,14 @@ if num_of_stalls != 1:
 else:
     keyboard = [
         [InlineKeyboardButton(text='Yes',
-                                            callback_data=stalls[0])],
+                              callback_data=stalls[0])],
         [InlineKeyboardButton(text='No',
-                                            callback_data='back')]
+                              callback_data='back')]
     ]
     self._msg_sent += 'So do you want to eat at this stall?'
 ```
 
-So, if indeed the displayed stall is only one, `_msg_sent` becomes *So do you want to et at this stall?*, instead of *So which stall looks appetizing?*.
+So, if indeed the displayed stall is only one, `_msg_sent` becomes *So do you want to eat at this stall?*, instead of *So which stall looks appetizing?*.
  
 In `_rate_taste`, first it retrieves the canteen and stall chosen from the attribute `_user_choice`.
 
@@ -217,20 +217,42 @@ Here it creates the message that contains the location of the canteen by seeking
 ```python
 keyboard = [
     [InlineKeyboardButton(text='Yummy :D',
-                                        callback_data=4)],
+                          callback_data=4)],
     [InlineKeyboardButton(text='Okay lah',
-                                        callback_data=3)],
+                          callback_data=3)],
     [InlineKeyboardButton(text='Not so good',
-                                        callback_data=2)]
+                          callback_data=2)]
 ]
 ```
 
-The code shown above is how the in-line keyboard button to asks the food taste. The score ranges from 2 - 4. Actually, the scoring system is 1 - 5. The steps from 2 - 4 to 1 - 5 will be explained later.
+The code shown above is how the in-line keyboard button to asks the food taste. The score ranges from 2 to 4. Actually, the scoring system is 1 to 5. The steps from 2 to 4 to 1 to 5 will be explained later.
 
-Then, as the previous methods done, it does `time.sleep(1)` then sends everything.
+Then, as the previous methods done, it does `time.sleep(1)` then sends everything. The rating is appended in `_user_choice`.
 
-`_rate_price` is very similar to `_rate_taste`, but the message is simply 'How about the price?' a
+`_rate_price` is very similar to `_rate_taste`, but the message is simply 'How about the price?', and the in-line keyboard is shown below.
 
+```python
+keyboard = [
+    [InlineKeyboardButton(text='Worth it!',
+                          callback_data=1)],
+    [InlineKeyboardButton(text='Fair lah',
+                          callback_data=0)],
+    [InlineKeyboardButton(text='Walaweee :(',
+                          callback_data=-1)]
+]
+```
+
+`_thank_you` does not have inline keyboard. First, it retrieves the rating by taste and price. The final rate is computed as taste rating which is 2 to 4, plus price rating,  -1 to 1, which will results the final rate ranging from 1 to 5.
+
+```python
+previous = ratings.get_rating(canteen, stalls)
+ratings.store_rating(canteen, stalls, int(taste) + int(price))
+now = ratings.get_rating(canteen, stalls)
+
+# For debugging purposes.
+print('Stored the rating, previous was = ', previous,
+      ' now is = ', now)
+```
 
 #### How to run it locally
 To run it on local machines, first you have to create a new bot from BotFather in Telegram and get the token. Download all the file in the `bot` directory, then paste the token you have to `TOKEN` in line 259 of `index.py`. You would not be able to run without changing the token as it will results in webhook error.
