@@ -79,16 +79,16 @@ A `DelegatorBot` is able to spawn delegates. The code is spawning `FoodStarter` 
 Inside `FoodStarter`, there are two code blocks worth paying attention to.
 ```python
 if content_type != 'text':
-	return
+    return
 ```
 This code block checks whether the user sent a text-type message. If not, the code will escape the `on_chat_message` function. 
 ```python
 self.sender.sendMessage(
-	'Press START to order some food ...',
-		reply_markup=InlineKeyboardMarkup(
-			inline_keyboard=[[
-				InlineKeyboardButton(
-	                text='START', callback_data='start')]
+    'Press START to order some food ...',
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[[
+                InlineKeyboardButton(
+                    text='START', callback_data='start')]
                 ]
             )
         )
