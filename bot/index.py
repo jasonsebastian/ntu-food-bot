@@ -80,10 +80,6 @@ class Fooder(telepot.helper.CallbackQueryOriginHandler):
             print('callback_query [' + str(query_id) + ', ' +
                   str(from_id) + ', ' + query_data + ']')
 
-        # Display welcome message.
-        self._msg_sent = (
-            'Hello, I\'m here to help you find your food!\n\n')
-
         # Go to function according to self._stage_count.
         if self._stage_count == 0:
             self._halal()
@@ -117,6 +113,9 @@ class Fooder(telepot.helper.CallbackQueryOriginHandler):
         ]
 
         markup = InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+        self._msg_sent = (
+            'Hello, I\'m here to help you find your food!\n\n')
         self._msg_sent += 'Do you have any food preference?'
 
         time.sleep(1)
