@@ -1,5 +1,6 @@
 Where's My Food?
 ----------
+CZ1003 Programming Assignment - Telegram Chatbot Project - Nanyang Technological University
 
 ### Table of Contents
 
@@ -9,7 +10,7 @@ Where's My Food?
  4. Flowcharts
  5. Constraints and limitations
  6. Future Development
- 7. Conclusion
+ 7. Summary
 
 ## Introduction
 ### Background
@@ -34,13 +35,13 @@ The code for this bot is written in Python. The bot will first ask the user whet
 ### Source Code
 #### Overview
 
-The program is broken down into 1 `python` file, 2 `python` modules and 1 `json` file. The 2 modules are `food.py` and `ratings.py`. The python file `index.py` works as the main program to run the bot. `food.py` consists of some function about inline keyboard building and processing data. `ratings.py` helps the main program to get data and write data into database. The `json` file mentioned earlier named `data.json` acts as the database. 
+The program is broken down into 1 python file, 2 python modules and 1 json file. The 2 modules are `food.py`, and `ratings.py`. And the python file `index.py` works as the main program to run the bot. `food.py` consists of some function about in-line keyboard building and processing data. `ratings.py` helps the main program to get data and write data into database. The `json` file mentioned earlier named `data.json` acts as the database. 
 
 #### index.py
 `index.py` is the main file which needs to be executed for the bot to run. In the code, the bot is instantiated using 2 classes, `FoodStarter` and `Fooder`. `FoodStarter` is instantiated every time a unique user sends a message to the bot. The instance of `FoodStarter`’s task is to prompt the user to start. Once the user chooses to start, the instance of `FoodStarter` is closed, and the instance of `Fooder` comes into place. The instance of `Fooder` only handles messages sent when the inline keyboard is pressed.
 
 #### food.py
-`food.py` helps `index.py` in building the inline keyboard buttons, retrieving the list of stalls for each canteen and then gives the Google Maps URL search query for locating said canteen.
+`food.py` helps `index.py` in building the in-line keyboard buttons, retrieving the list of stalls for each canteen and then gives the Google Maps URL search query for locating said canteen.
 
 The first function defined is `no_pref_canteens_kbd`. It takes no parameters and returns the in line keyboard button for all the canteens.
 
@@ -62,26 +63,46 @@ def get_rating(canteen, stall):
     return data[canteen][stall][0]
 ```
 
-Then there is also a function called `store_rating(canteen, stall, rating)`. `data.json` only stores the total rating voted and current rating. The number of people is not stored explicitly, but is calculated by the equation
-$$ p = \frac{t}{r} $$
-where $t$ represents the total number of vote and $r$ as the current rating. To avoid division by 0 error, if $r = 0$, p is simply $0$. Then it writes it into the `json` file.
+Then there is also a function called `store_rating(canteen, stall, rating)`.
+```python
+def store_rating(canteen, stall, rating):
+    with open('/app/bot/data.json', 'r') as file:
+        data = json.load(file)
+
+    acc_rating = data[canteen][stall][1]
+    avg_rating = data[canteen][stall][0]
+
+    if acc_rating == 0:
+        n = 1
+    else:
+        n = acc_rating / avg_rating
+        n += 1
+
+    acc_rating += rating
+    avg_rating = acc_rating / n
+
+    data[canteen][stall][0] = avg_rating
+    data[canteen][stall][1] = acc_rating
+
+    with open('/app/bot/data.json', 'w') as file:
+        json.dump(data, file)
+```
+ `data.json` only stores the total rating voted and current rating. The number of people is not stored explicitly, but is calculated by the equation p = t/r. Where t represents the total number of vote and r as the current rating. To avoid division by 0 error, if r = 0, p is simply $. Then it writes it into the `json` file.
 
 ### How it works
-It is probably best if we explain about the concept of flavors.
-
-Regardless of the type of objects received, `telepot` generically calls everything the user sends as “message” (with a lowercase “m”). A message’s flavor depends on the underlying object:
+It is probably best if the concept of flavors is explained first. Regardless of the type of objects received, `telepot` generically calls everything the user sends as a “message” (with a lowercase “m”). A message’s flavor depends on the underlying object:
  - a `Message` object gives the flavor **chat**
  - a `CallbackQuery` object gives the flavor **callback_query**
 
-And now, we get to the main theme.
+And now for the main theme.
 
-A `DelegatorBot` is able to spawn **delegates**. The code is spawning `FoodStarter` and `Fooder` **per chat id**. Then, the bot calls `MessageLoop` which makes the bot to run forever.
+A `DelegatorBot` is able to spawn **delegates**. The code spawns `FoodStarter` and `Fooder` per chat id. Then, the bot calls `MessageLoop` which makes the bot run infinitely.
 
 There are only two methods inside `FoodStarter`, `on_chat_message` and `on_close`.
 
 `on_chat_message` handles all messages with `chat` flavor, and `on_close` is called when the object is closed.
 
-There are two code blocks worth paying attention to.
+There are two code blocks worth paying attention to. The first code block is: 
 
 ```python
 if content_type != 'text':
@@ -93,28 +114,26 @@ This code block checks whether the user sent a text-type message. If not, the co
 ```python
 self.sender.sendMessage(
     'Press START to order some food ...',
-        reply_markup=InlineKeyboardMarkup(
-            inline_keyboard=[[
-                InlineKeyboardButton(
-                    text='START', callback_data='start')]
-                ]
-            )
-        )
+    reply_markup=InlineKeyboardMarkup(
+        inline_keyboard=[[
+            InlineKeyboardButton(
+                text='START', callback_data='start')]
+        ]
+    )
+)
 ```
 
-This code block sends *Press START to order some food...* to the user with an inline keyboard, containing a button labeled *START*. Throughout the code, messages along with their respective keyboards will be sent by **replacing** this first message, which means that there will only be at most one message and one inline keyboard.
+This code block sends *Press START to order some food...* to the user with an inline keyboard, containing a button labeled <kbd>START</kbd>. Throughout the code, messages along with their respective keyboards will be sent by replacing this first message, which means that there will only be at most one message and one inline keyboard.
 
-Inside `Fooder`, the methods can be categorized into two types: user-defined methods and built-in methods. The latter will be discussed first.
+Inside `Fooder`, the methods can be categorized into two types: **user-defined** methods and **built-in** methods. The latter will be discussed first.
 
 There are 3 built-in methods; `on_callback_query`, `on__idle` and `on_close`.
-
 `on_callback_query`'s task is to handle all messages with `callback_query` flavor, `on__idle` is called when the user is idle for the duration specified in the timeout parameter (line 266), and `on_close`'s method is previously explained.
 
 There are two attributes initialized here, `_user_choice` and `_stage_count`.
-
 `_user_choice` is a list where all of the user's choices will be stored. `_stage_count` is an integer attribute and it indicates the *stage* the user is currently on. *Stage* is different for each different question asked to the user.
 
-In `on_callback_query` method, the code checks if the user has already pressed the *START* button. If so, then `_halal` is called. If the user presses the keyboard from `_halal`, `_stage_count` will increment and the `query_data` will be appended to a list called `_user_choice`. `_stage_count` will continue to increment as the program progresses.
+In `on_callback_query` method, the code checks if the user has already pressed the <kbd>START</kbd>> button. If so, then `_halal` is called. If the user presses the keyboard from `_halal`, `_stage_count` will increment and the `query_data` will be appended to a list called `_user_choice`. `_stage_count` will continue to increment as the program progresses.
 
 Two exceptions are handled in this method.
 
@@ -126,14 +145,14 @@ if query_data == 'back' and self._user_choice:
     self._stage_count -= 1  # Go to the previous stage.
 ```
 
-The first one is when the user presses the *BACK* button in each stage, as shown on the code above. `_user_choice` will pop its last element and `_stage_count` will decrement.
+The first one is when the user presses the <kbd>BACK</kbd> button in each stage, as shown on the code above. `_user_choice` will pop its last element and `_stage_count` will decrement.
 
-The second is implicitly written on the code. If the user keeps sending random text messages and presses the *START* button, the keyboard from `_halal` will continue to pop up. In other words, in order to continue the user must press one of the button of the inline keyboard.
+The second is implicitly written on the code. If the user keeps sending random text messages and presses the <kbd>START</kbd> button, the keyboard from `_halal` will continue to pop up. In other words, in order to continue the user must press one of the button of the inline keyboard.
 
-Each of the user-defined methods corresponds to one stage, and as previously mentioned, the stages are accessed by evaluating the value of `_stage_count`. The order of the stages can be seen from the code below.
+Each of the user-defined functions corresponds to one stage, and as previously mentioned, the stages are accessed by evaluating the value of `_stage_count`. The order of the stages can be seen from the code below.
 
 ```python
-# Go to method according to self._stage_count.
+# Go to function according to self._stage_count.
     if self._stage_count == 0:
         self._halal()
     elif self._stage_count == 1:
@@ -150,7 +169,7 @@ Each of the user-defined methods corresponds to one stage, and as previously men
 
 Also, on every stage, whenever the message needs concatenation operations, the attribute `_msg_sent` is used.
 
-In `_halal`, a keyboard containing *Halal food* and *Everything I eat* is set up. `editor.editMessageText` edits the previous message and keyboard if present. Each of the user-defined method will have this `editor.editMessageText` method, which as previously mentioned, will replace the previous message and send a new one.
+In `_halal`, a keyboard containing <kbd>Halal food</kbd> and <kbd>Everything I eat</kbd> is set up. `editor.editMessageText` edits the previous message and keyboard if present. Each of the user-defined method will have this `editor.editMessageText` method, which as previously mentioned, will replace the previous message and send a new one.
 
 Another thing to notice is that the `editor.editMessageText` is always paired with `time.sleep(1)`. An example code would be from line 119-120.
 
@@ -227,9 +246,9 @@ keyboard = [
 
 The code shown above is how the in-line keyboard button to asks the food taste. The score ranges from 2 to 4. Actually, the scoring system is 1 to 5. The steps from 2 to 4 to 1 to 5 will be explained later.
 
-Then, as the previous methods done, it does `time.sleep(1)` then sends everything. The rating is appended in `_user_choice`.
+Then, as the previous methods done, it does `time.sleep(1)` then sends everything. The rating user gives will be appended to `_user_choice`.
 
-`_rate_price` is very similar to `_rate_taste`, but the message is simply 'How about the price?', and the in-line keyboard is shown below.
+`_rate_price` is very similar to `_rate_taste`, but the message is simply *How about the price?*, and the inline keyboard is shown below.
 
 ```python
 keyboard = [
@@ -242,8 +261,7 @@ keyboard = [
 ]
 ```
 
-`_thank_you` does not have inline keyboard. First, it retrieves the rating by taste and price. The final rate is computed as taste rating which is 2 to 4, plus price rating,  -1 to 1, which will results the final rate ranging from 1 to 5.
-
+`_thank_you` does not have inline keyboard. First, it retrieves the rating by taste and price. The final rate is computed as taste rating which is 2 to 4, plus the price rating,  -1 to 1, which will results the final rate ranging from 1 to 5.
 ```python
 previous = ratings.get_rating(canteen, stalls)
 ratings.store_rating(canteen, stalls, int(taste) + int(price))
@@ -253,6 +271,14 @@ now = ratings.get_rating(canteen, stalls)
 print('Stored the rating, previous was = ', previous,
       ' now is = ', now)
 ```
+With help from `ratings.py`, it collects the current rating of the stall, then it gives the new rating into `data.json` using `store_rating`. Then, again it collects the rating of the stall. The retrieving processes are not compulsory, it is solely done for debugging purposes on the logs.
+
+```python
+time.sleep(20)
+self.editor.deleteMessage()
+self.close()
+```
+As shown on the message, the message will be deleted in 20 seconds. It could be achieved by running `time.sleep(20)`. Then, the method `deleteMessage()` deletes the message and `close()` terminates the process of the instance of the bot class.
 
 #### How to run it locally
 To run it on local machines, first you have to create a new bot from BotFather in Telegram and get the token. Download all the file in the `bot` directory, then paste the token you have to `TOKEN` in line 259 of `index.py`. You would not be able to run without changing the token as it will results in webhook error.
@@ -271,15 +297,19 @@ Then run `index.py`, and try it from Telegram App.
 ### Flowcharts
 ![Flowchart 1](https://lh3.googleusercontent.com/-6LCAV6EDwEA/Wd8PFSS7AZI/AAAAAAAAAdo/YI_wsNZl5_QsDqW4HHaocihdSZU-tRtjgCLcBGAs/s0/FLOWCHART+1+LG.jpg "Flowchart 1")
 
-![enter image description here](https://lh3.googleusercontent.com/-CB2Unpslln0/Wd8PPN_DhbI/AAAAAAAAAdw/VlimIw-Vl0cLajSgP-OhbrGsHHXcojJbwCLcBGAs/s0/FLOWCHART+FINAL.jpg "Flowchart 2")
+![fc 2](https://lh3.googleusercontent.com/-WTUhu-QMvN8/Wd-lrAb8FfI/AAAAAAAAAeU/y6H1SA1oJOAMpDCJg6nX9nZhUzRXrumYwCLcBGAs/s0/FLOWCHART+FINAL+%25282%2529.jpg "FLOWCHART FINAL &#40;2&#41;.jpg")
+
+![fc3](https://lh3.googleusercontent.com/-d6u2tRxPNX8/Wd-ly-jnzVI/AAAAAAAAAec/uxP080tJ-0kDRXTfGje5eUju5Egy8H1VgCLcBGAs/s0/FLOWCHART+FINAL+%25283%2529.jpg "FLOWCHART FINAL &#40;3&#41;.jpg")
 
 ## Constraints and Limitations
-One of the biggest limitations found in this chat bot is that one can spam '/start' to the chat bot and it will let the program to create a great number of instances of the bot class. It may take the system down.
+One of the biggest limitations found in this chat bot is that one can spam `/start` to the chat bot and it will let the program to create a great number of instances of the bot class. It may take the system down.
 
 The next limitation is that one can give fake ratings by using our bot repetitively to alter any stall's rate. This is a quite serious problem because if the information given is not reliable, then no one will use the bot.
 
 ## Future Development
-If we had more time, we would implement a strategy to tackle those constraints stated above. To solve the '/start' spamming problem, one possible way is to check whether this user have already got an instance of bot class or not by analyzing the chat id. Then to solve the fake ratings problem, it may be done by record users’ voting history, to let the user vote only after some period of time after the preceding vote.
+If we had more time, we would implement a strategy to tackle those constraints stated above. To solve the `/start` spamming problem, one possible way is to check whether this user have already got an instance of bot class or not by analyzing the chat id. Then to solve the fake ratings problem, it may be done by record users’ voting history, to let the user vote only after some period of time after the preceding vote.
 
-## Conclusion
+We would put more features into the bot. One of them might be providing direction from user’s current location to the canteen location. The other is add more services by establishing the similar system but it is for water refilling stations. Moreover, we would like to extend the bot functionality by adding the menus and prices for each dishes. One more things to improve may be developing a system so that users can add, remove or change the list of stalls, food or its price to let the database be up to date.
+
+## Summary
 Deciding what to eat may be annoying sometimes. Often we doubt stall's food. Moreover for our Muslim peers, they have to know which stall are halal. Therefore, 'Where's My Food?' chatbot helps to choose food based on your halal and canteen preferences, with live time ratings given by preceding users. It surely has some constraints and limitation, but with certain development it should be able to serve better.
